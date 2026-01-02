@@ -7,7 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* 1. 基础变量 (保持 v3 原汁原味) */
+        /* 1. 基础变量 */
         :root { --primary: #07C160; --bg: #f2f2f2; --white: #ffffff; --text: #111; --text-sub: #888; --border: #e0e0e0; --user-bg: #95ec69; --ai-bg: #ffffff; --sidebar-bg: #f7f7f7; --sys-msg-bg: #e1e1e1; }
         [data-theme="dark"] { --primary: #07C160; --bg: #111111; --white: #1e1e1e; --text: #e0e0e0; --text-sub: #aaa; --border: #333; --user-bg: #056a36; --ai-bg: #2c2c2c; --sidebar-bg: #1a1a1a; --sys-msg-bg: #333; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -22,13 +22,13 @@
         .header-title { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; transition: opacity 0.3s; }
         .header-btn { font-size: 18px; cursor: pointer; padding: 8px; }
 
-        /* 4. 聊天区域 (关键：找回了 fade 动画) */
+        /* 4. 聊天区域 */
         .chat-area { 
             flex: 1; overflow-y: auto; padding: 15px; 
             -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 15px;
-            opacity: 1; transition: opacity 0.4s ease; /* 丝滑切换的关键 */
+            opacity: 1; transition: opacity 0.4s ease;
         }
-        .chat-area.fading { opacity: 0; } /* 切换时变透明 */
+        .chat-area.fading { opacity: 0; }
 
         .message { display: flex; align-items: flex-start; gap: 10px; max-width: 100%; }
         .message.user { flex-direction: row-reverse; }
@@ -36,10 +36,10 @@
         .message.user .avatar { display: none; }
         .bubble-content { max-width: 85%; display: flex; flex-direction: column; min-width: 0; }
         
-        /* 修复版样式：增加列表缩进，优化阅读体验 */
+        /* ★★★ 修复：增大内边距，解决文字贴边问题 ★★★ */
         .bubble { 
-            padding: 12px 18px; 
-            border-radius: 10px; 
+            padding: 14px 18px; /* 增大内边距 */
+            border-radius: 12px; 
             font-size: 15px; 
             line-height: 1.6; 
             position: relative; 
@@ -47,16 +47,9 @@
             word-wrap: break-word; 
             overflow-wrap: break-word; 
         }
+        /* 修复列表贴边 */
+        .bubble ul, .bubble ol { margin: 5px 0 10px 25px; padding: 0; }
         
-        /* 专门给列表(ul, ol)增加缩进，防止圆点贴边 */
-        .bubble ul, .bubble ol { 
-            margin: 5px 0 10px 25px; /* 左侧留出25px给圆点 */
-            padding: 0; 
-        }
-        
-        .bubble li {
-            margin-bottom: 5px; /* 让列表项之间有点间隙 */
-        }
         .message.ai .bubble { background: var(--ai-bg); border: 1px solid var(--border); }
         .message.user .bubble { background: var(--user-bg); border: 1px solid transparent; color: #000; }
         [data-theme="dark"] .message.user .bubble { color: #fff; }
@@ -148,7 +141,8 @@
         
         <div class="form-group">
             <label>销售产品</label>
-            <input type="text" id="product_name" class="form-control" placeholder="手动输入产品名 (如: 少女针)">
+            <input type="text" id="product_name" class="form-control" list="product_list" placeholder="输入或点击选择产品" onfocus="loadProductsFromSheet()">
+            <datalist id="product_list"></datalist>
         </div>
 
         <button class="btn-confirm" onclick="confirmConfig()">保存设置，开始</button>
@@ -175,7 +169,6 @@
         </div>
     </div>
 
-    <!-- 聊天区 -->
     <div class="chat-area" id="chat-box">
         <div class="message ai">
             <div class="avatar" id="ai-avatar"></div>
@@ -194,7 +187,7 @@
     </div>
 </div>
 
-<!-- 使用说明弹窗 (还原 v3 样式) -->
+<!-- 使用说明弹窗 -->
 <div class="modal" id="help-modal">
     <div class="modal-content">
         <span class="close-modal" onclick="closeModal('help-modal')">&times;</span>
@@ -203,23 +196,22 @@
         <div>
             <p><strong>1. 基础设置</strong><br>首次使用请点击右上角齿轮图标，输入老板下发的授权码，并绑定您的工号。</p>
             <p><strong>2. 模式切换</strong><br>💰 <strong>实战辅助</strong>：复制客户说的话发给AI，AI会根据产品资料给您高情商回复话术。<br>🎭 <strong>模拟陪练</strong>：AI会扮演刁钻客户，您来回复，AI会给您的回复打分。</p>
-            <p><strong>3. 产品输入</strong><br>请在设置页手动输入产品名称（需与老板后台表格一致），AI会自动读取后台数据。</p>
+            <p><strong>3. 产品输入</strong><br>请在设置页手动输入产品名称（需与老板后台表格一致），点击输入框可看到联想词。</p>
         </div>
     </div>
 </div>
 
 <script>
-       // ==========================================
+ 
     const WORKER_URL = 'https://ym.huaged.com'; // Cloudflare 地址
     const LOG_URL = 'https://script.google.com/macros/s/AKfycbxG89jNmERWo_pCzfiqseqhfbhWE2cYUjyUE6XAz3BCb9-m_OkWZEyjDMuZAknqvg_F/exec'; 
     const AI_AVATAR_URL = 'https://cdn-icons-png.flaticon.com/512/4712/4712027.png'; 
-    // ==========================================
  
+
     let currentConvId = "";
     let chatList = JSON.parse(localStorage.getItem('med_chat_list')) || [];
     let isDark = localStorage.getItem('theme') === 'dark';
 
-    // 1. 初始化 (修复回车键)
     document.addEventListener('DOMContentLoaded', () => {
         loadConfig(); 
         applyTheme(); 
@@ -230,31 +222,50 @@
         if (chatList.length > 0) loadChat(chatList[0].id);
         
         const input = document.getElementById('user_input');
+        input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
         
-        // 自适应高度
-        input.addEventListener('input', function() { 
-            this.style.height = 'auto'; 
-            this.style.height = (this.scrollHeight) + 'px'; 
-        });
-
-        // ★★★ 暴力修复回车发送 ★★★
+        // ★★★ 核心修复 1：回车发送逻辑 (最暴力直接版) ★★★
         input.onkeydown = function(e) {
-            // 只有按下 Enter (code 13) 且没有按 Shift 时触发
-            if (e.keyCode === 13 && !e.shiftKey) {
+            // 如果按了回车，且没按 Shift，且不是在选中文输入法
+            if (e.keyCode === 13 && !e.shiftKey && !e.isComposing) {
                 e.preventDefault(); // 阻止换行
-                sendMessage();      // 立即发送
+                // 直接调用发送，不走其他弯路
+                sendMessage();      
             }
         };
         
         updateUIByMode();
     });
 
-// 2. 发送消息 (v8.0 修复版：彻底解耦展示与记账)
+    async function loadProductsFromSheet() {
+        const datalist = document.getElementById('product_list');
+        if(datalist.options.length > 0) return;
+        if(LOG_URL.includes("填在这里")) return; 
+
+        try {
+            const response = await fetch(LOG_URL + '?action=get_products');
+            const products = await response.json();
+            datalist.innerHTML = ""; 
+            products.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.name;
+                datalist.appendChild(opt);
+            });
+        } catch (e) { console.error("加载产品失败"); }
+    }
+
     async function sendMessage() {
         const input = document.getElementById('user_input');
         const text = input.value.trim();
         const btn = document.getElementById('send_btn');
         
+        // ★★★ 核心修复 2：地址检查 ★★★
+        // 如果用户没改代码里的 URL，直接弹窗提示，不让发请求
+        if(WORKER_URL.includes("huaged.com") === false && WORKER_URL.includes("http") === false) {
+            alert("❌ 配置错误：请联系管理员在代码中填入正确的 Cloudflare API 地址！"); 
+            return;
+        }
+
         const auth = document.getElementById('auth_code').value.trim();
         const phone = document.getElementById('phone_number').value.trim();
         const product = document.getElementById('product_name').value.trim();
@@ -266,7 +277,7 @@
 
         // UI 响应
         appendMessage('user', text);
-        input.value = ''; input.style.height = '40px'; input.blur(); closeAll();
+        input.value = ''; input.style.height = '60px'; input.blur(); closeAll();
         input.disabled = true; input.placeholder = "AI 正在思考...";
         btn.style.opacity = "0.5";
         
@@ -287,27 +298,30 @@
                 "user": "user-" + phone
             };
 
-            // 1. 先只请求 Dify，拿答案
             const response = await fetch(WORKER_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            // 2. 无论结果如何，先移除思考动画，恢复输入框
+            // ★★★ 核心修复 3：先删动画，再处理结果 (防止卡死) ★★★
             removeThinking(loadingId);
-            input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
-            if(window.innerWidth > 768) input.focus();
-
-            if (!response.ok) throw new Error(`服务异常 (${response.status})`);
             
+            if (!response.ok) {
+                throw new Error(`服务异常 (${response.status})`);
+            }
+
             const data = await response.json();
             
             if (data.answer) {
-                // 3. ★★★ 最重要的一步：先把答案显示出来！让用户爽！★★★
+                // 1. 正常显示
                 appendMessage('ai', data.answer, true);
                 
-                // 4. 更新历史记录
+                // 2. 异步记账 (解耦，不影响显示)
+                setTimeout(() => {
+                    logToSheetSafe(auth, product, text, data.answer, phone, mode);
+                }, 50);
+
                 if (currentConvId !== data.conversation_id) { 
                     currentConvId = data.conversation_id; 
                     updateChatList(currentConvId, text); 
@@ -316,52 +330,35 @@
                 saveMsg(currentConvId, 'user', text);
                 if (data.answer) saveMsg(currentConvId, 'ai', data.answer);
 
-                // 5. ★★★ 最后再偷偷去记账，不要用 await，让它在后台跑 ★★★
-                // 延迟 100ms 执行，确保 UI 已经渲染完毕
-                setTimeout(() => {
-                    logToSheetSafe(auth, product, text, data.answer, phone, mode);
-                }, 100);
-
             } else {
                 appendMessage('ai', "❌ " + (data.message || "未知错误"));
             }
 
         } catch (error) {
-            removeThinking(loadingId);
-            input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
+            // 只有真报错了才走这里
+            removeThinking(loadingId); // 双重保险，确保动画删除
             appendMessage('ai', `❌ 网络错误：${error.message}`);
+        } finally {
+            // 无论成功失败，都解锁 UI
+            input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
+            if(window.innerWidth > 768) input.focus(); 
         }
     }
 
- 
-// 日志上报 (完全静默模式，失败也不报错)
     function logToSheetSafe(auth, prod, query, ans, phone, mode) {
         if(LOG_URL.includes("填在这里")) return; 
         
         let devId = localStorage.getItem('dev_id');
         if(!devId) { devId = 'dev-'+Math.random().toString(36).substr(2,9); localStorage.setItem('dev_id', devId); }
         
-        // 使用 no-cors 模式，这是跨域请求 Google 脚本成功的唯一方法
         fetch(LOG_URL, {
-            method: 'POST',
-            mode: 'no-cors', 
+            method: 'POST', mode: 'no-cors', 
             headers: {'Content-Type': 'text/plain;charset=utf-8'},
             body: JSON.stringify({
-                action: "log",
-                auth_code: auth,
-                phone: phone,
-                product: prod,
-                mode: mode, 
-                query: query,
-                answer: ans,
-                device_id: devId
+                action: "log", auth_code: auth, phone: phone, product: prod,
+                mode: mode, query: query, answer: ans, device_id: devId
             })
-        }).then(() => {
-            console.log("日志上报请求已发送");
-        }).catch(e => {
-            // 这里的错误被捕获，绝对不会影响主界面
-            console.warn("日志上报失败 (不影响使用)", e); 
-        });
+        }).catch(e => {});
     }
 
     function appendMessage(role, text, showCopy=false) {
@@ -458,27 +455,17 @@
     function toggleTheme() { isDark = !isDark; localStorage.setItem('theme', isDark?'dark':'light'); applyTheme(); }
     function applyTheme() { document.documentElement.setAttribute('data-theme', isDark?'dark':'light'); }
     function clearCache() { if(confirm("确定清除？")) { localStorage.clear(); location.reload(); } }
-
-    // 历史记录 (核心逻辑回归 v3，含淡入淡出)
+    
     function startNewChat() { 
-        currentConvId = ""; // 重置 ID，Dify 会自动新建
-        
+        currentConvId = ""; 
         const chatBox = document.getElementById('chat-box');
-        
-        // 1. 淡出
         chatBox.classList.add('fading');
-        
         setTimeout(() => {
-            // 2. 清空并换新内容
             chatBox.innerHTML = `<div class="message ai"><div class="avatar" style="background-image: url('${AI_AVATAR_URL}')"></div><div class="bubble-content"><div class="bubble">👋 新会话开始。</div></div></div>`; 
-            
-            // 3. 淡入
             chatBox.classList.remove('fading');
-            
-            closeAll(); 
-            // 移除侧边栏高亮
+            closeAll();
             document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-        }, 400); // 配合 CSS 的 0.4s 动画
+        }, 400); 
     }
 
     function updateChatList(id, firstMsg) { 
@@ -523,20 +510,13 @@
 
     function loadChat(id) {
         const chatBox = document.getElementById('chat-box');
-        
-        // 1. 淡出
         chatBox.classList.add('fading');
         closeAll();
-
         setTimeout(() => {
             currentConvId = id; 
             const msgs = JSON.parse(localStorage.getItem(`med_msg_${id}`)) || []; 
-            
-            // 2. 渲染旧消息
             chatBox.innerHTML = ''; 
             msgs.forEach(m => appendMessage(m.role, m.content));
-            
-            // 3. 淡入
             chatBox.classList.remove('fading');
             renderHistory(); 
         }, 400);
