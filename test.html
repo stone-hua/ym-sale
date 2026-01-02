@@ -36,7 +36,8 @@
         .message.user .avatar { display: none; }
         .bubble-content { max-width: 85%; display: flex; flex-direction: column; min-width: 0; }
         
-        .bubble { padding: 12px 16px; border-radius: 8px; font-size: 15px; line-height: 1.6; position: relative; color: var(--text); word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }
+        /* 修改了 padding (内边距) 和 line-height (行高) */
+        .bubble { padding: 15px 20px; border-radius: 12px; font-size: 15px; line-height: 1.6; position: relative; color: var(--text); word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }
         .message.ai .bubble { background: var(--ai-bg); border: 1px solid var(--border); }
         .message.user .bubble { background: var(--user-bg); border: 1px solid transparent; color: #000; }
         [data-theme="dark"] .message.user .bubble { color: #fff; }
@@ -194,29 +195,44 @@
     const LOG_URL = 'https://script.google.com/macros/s/AKfycbxG89jNmERWo_pCzfiqseqhfbhWE2cYUjyUE6XAz3BCb9-m_OkWZEyjDMuZAknqvg_F/exec'; 
     const AI_AVATAR_URL = 'https://cdn-icons-png.flaticon.com/512/4712/4712027.png'; 
     // ==========================================
-
-
+ 
     let currentConvId = "";
     let chatList = JSON.parse(localStorage.getItem('med_chat_list')) || [];
     let isDark = localStorage.getItem('theme') === 'dark';
 
+    // 1. 初始化 (修复回车键)
     document.addEventListener('DOMContentLoaded', () => {
         loadConfig(); 
         applyTheme(); 
         renderHistory();
+        loadProductsFromSheet();
         
         document.querySelectorAll('.avatar').forEach(el => el.style.backgroundImage = `url('${AI_AVATAR_URL}')`);
         if (chatList.length > 0) loadChat(chatList[0].id);
         
         const input = document.getElementById('user_input');
-        input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
-        input.addEventListener('keydown', (e) => { 
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } 
+        
+        // 自适应高度
+        input.addEventListener('input', function() { 
+            this.style.height = 'auto'; 
+            this.style.height = (this.scrollHeight) + 'px'; 
         });
+
+        // ★★★ 暴力修复回车发送 ★★★
+        input.onkeydown = function(e) {
+            // 只有按下 Enter (code 13) 且没有按 Shift 时触发
+            if (e.keyCode === 13 && !e.shiftKey) {
+                e.preventDefault(); // 阻止换行
+                sendMessage();      // 立即发送
+            }
+        };
         
         updateUIByMode();
     });
 
+    // ... (loadProductsFromSheet 函数保留) ...
+
+    // 2. 发送消息 (防卡死版)
     async function sendMessage() {
         const input = document.getElementById('user_input');
         const text = input.value.trim();
@@ -228,11 +244,12 @@
         const mode = document.getElementById('task_mode').value;
 
         if (!text || input.disabled) return;
-        if (!auth || !phone) { alert("请先点击右上角⚙️设置！"); toggleConfig(); return; }
+        if (!auth || !phone) { alert("请先设置授权码！"); toggleConfig(); return; }
         if (!product) { alert("请输入产品名称！"); toggleConfig(); return; }
 
+        // UI 锁定
         appendMessage('user', text);
-        input.value = ''; input.style.height = '60px'; input.blur(); closeAll();
+        input.value = ''; input.style.height = '40px'; input.blur(); 
         input.disabled = true; input.placeholder = "AI 正在思考...";
         btn.style.opacity = "0.5";
         
@@ -250,7 +267,7 @@
                 "query": text,
                 "response_mode": "blocking",
                 "conversation_id": currentConvId,
-                "user": userId
+                "user": "user-" + phone
             };
 
             const response = await fetch(WORKER_URL, {
@@ -259,46 +276,65 @@
                 body: JSON.stringify(payload)
             });
 
+            // ★★★ 关键修改：收到数据后，第一时间解锁 UI，防止卡死 ★★★
             removeThinking(loadingId);
-            if (!response.ok) throw new Error(`请求异常 (${response.status})`);
+            input.disabled = false; 
+            updatePlaceholder(); 
+            btn.style.opacity = "1";
+            // 电脑端自动聚焦，方便连续输入
+            if(window.innerWidth > 768) input.focus(); 
+
+            if (!response.ok) throw new Error(`服务异常 (${response.status})`);
+            
             const data = await response.json();
             
             if (data.answer) {
+                // 1. 先展示回复 (让用户爽)
                 appendMessage('ai', data.answer, true);
                 
-                logToSheetSafe(auth, product, text, data.answer, phone);
-
-                if (currentConvId !== data.conversation_id) { 
-                    currentConvId = data.conversation_id; 
-                    updateChatList(currentConvId, text); 
-                    renderHistory(); 
-                }
-                saveMsg(currentConvId, 'user', text);
-                if (data.answer) saveMsg(currentConvId, 'ai', data.answer);
+                // 2. 后台默默干活 (记账、存历史)，就算这里报错也不会卡住界面
+                setTimeout(() => {
+                    logToSheetSafe(auth, product, text, data.answer, phone, mode);
+                    
+                    if (currentConvId !== data.conversation_id) { 
+                        currentConvId = data.conversation_id; 
+                        updateChatList(currentConvId, text); 
+                        renderHistory(); 
+                    }
+                    saveMsg(currentConvId, 'user', text);
+                    if (data.answer) saveMsg(currentConvId, 'ai', data.answer);
+                }, 10);
 
             } else {
                 appendMessage('ai', "❌ " + (data.message || "未知错误"));
             }
 
         } catch (error) {
+            // 只有真断网了才会走这里
             removeThinking(loadingId);
+            input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
             appendMessage('ai', `❌ 网络错误：${error.message}`);
-        } finally {
-            input.disabled = false; updateUIByMode(); btn.style.opacity = "1";
-            if(window.innerWidth > 768) input.focus(); 
         }
     }
 
-    function logToSheetSafe(auth, prod, query, ans, phone) {
+ 
+    function logToSheetSafe(auth, prod, query, ans, phone, mode) { // <--- 参数加了 mode
         let devId = localStorage.getItem('dev_id');
         if(!devId) { devId = 'dev-'+Math.random().toString(36).substr(2,9); localStorage.setItem('dev_id', devId); }
         
         fetch(LOG_URL, {
-            method: 'POST', mode: 'no-cors', 
+            method: 'POST',
+            mode: 'no-cors', 
             headers: {'Content-Type': 'text/plain;charset=utf-8'},
             body: JSON.stringify({
-                action: "log", auth_code: auth, phone: phone, product: prod,
-                query: query, answer: ans, device_id: devId
+                action: "log",
+                auth_code: auth,
+                phone: phone,
+                product: prod,
+                mode: mode, // <--- 传给后台
+                query: query,
+                answer: ans,
+                device_id: devId
             })
         }).catch(e => {});
     }
