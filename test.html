@@ -36,18 +36,9 @@
         .message.user .avatar { display: none; }
         .bubble-content { max-width: 85%; display: flex; flex-direction: column; min-width: 0; }
         
-        /* ★★★ 修复：增大内边距，解决文字贴边问题 ★★★ */
-        .bubble { 
-            padding: 14px 18px; /* 增大内边距 */
-            border-radius: 12px; 
-            font-size: 15px; 
-            line-height: 1.6; 
-            position: relative; 
-            color: var(--text); 
-            word-wrap: break-word; 
-            overflow-wrap: break-word; 
-        }
-        /* 修复列表贴边 */
+        /* 气泡样式优化 */
+        .bubble { padding: 12px 16px; border-radius: 8px; font-size: 15px; line-height: 1.6; position: relative; color: var(--text); word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }
+        /* 列表缩进优化 */
         .bubble ul, .bubble ol { margin: 5px 0 10px 25px; padding: 0; }
         
         .message.ai .bubble { background: var(--ai-bg); border: 1px solid var(--border); }
@@ -120,7 +111,7 @@
         <div class="header-btn" onclick="toggleConfig()"><i class="fas fa-cog"></i></div>
     </div>
 
-    <!-- 配置面板 -->
+    <!-- 配置面板 (精简版：去掉了客户标签，产品改为纯文本) -->
     <div class="config-panel" id="config-panel">
         <div class="form-group" style="border-bottom: 1px dashed var(--border); padding-bottom: 15px; margin-bottom: 15px;">
             <label style="color: var(--primary); font-weight: bold; font-size: 14px; margin-bottom: 5px;">🛠️ 功能模式</label>
@@ -141,8 +132,8 @@
         
         <div class="form-group">
             <label>销售产品</label>
-            <input type="text" id="product_name" class="form-control" list="product_list" placeholder="输入或点击选择产品" onfocus="loadProductsFromSheet()">
-            <datalist id="product_list"></datalist>
+            <!-- 核心改动：纯文本输入，无下拉，无联想 -->
+            <input type="text" id="product_name" class="form-control" placeholder="请输入产品名称 (如：少女针)">
         </div>
 
         <button class="btn-confirm" onclick="confirmConfig()">保存设置，开始</button>
@@ -183,11 +174,12 @@
 
     <div class="footer">
         <textarea id="user_input" class="input-box" placeholder="输入客户说的话..." rows="1" maxlength="5000"></textarea>
+        <!-- 注意：ID 必须是 send_btn 以配合回车逻辑 -->
         <div class="send-btn" id="send_btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></div>
     </div>
 </div>
 
-<!-- 使用说明弹窗 -->
+<!-- 使用说明弹窗 (保持原样) -->
 <div class="modal" id="help-modal">
     <div class="modal-content">
         <span class="close-modal" onclick="closeModal('help-modal')">&times;</span>
@@ -196,17 +188,19 @@
         <div>
             <p><strong>1. 基础设置</strong><br>首次使用请点击右上角齿轮图标，输入老板下发的授权码，并绑定您的工号。</p>
             <p><strong>2. 模式切换</strong><br>💰 <strong>实战辅助</strong>：复制客户说的话发给AI，AI会根据产品资料给您高情商回复话术。<br>🎭 <strong>模拟陪练</strong>：AI会扮演刁钻客户，您来回复，AI会给您的回复打分。</p>
-            <p><strong>3. 产品输入</strong><br>请在设置页手动输入产品名称（需与老板后台表格一致），点击输入框可看到联想词。</p>
+            <p><strong>3. 产品输入</strong><br>请在设置页手动输入产品名称（需与老板后台表格一致），AI会自动读取后台数据。</p>
         </div>
     </div>
 </div>
 
 <script>
- 
-    const WORKER_URL = 'https://ym.huaged.com'; // Cloudflare 地址
-    const LOG_URL = 'https://script.google.com/macros/s/AKfycbxG89jNmERWo_pCzfiqseqhfbhWE2cYUjyUE6XAz3BCb9-m_OkWZEyjDMuZAknqvg_F/exec'; 
+    // ==========================================
+    // ⚠️ 核心配置区
+    // ==========================================
+    const WORKER_URL = 'https://api.huaged.com'; 
+    const LOG_URL = '你的_GOOGLE_SCRIPT_URL_填在这里'; 
     const AI_AVATAR_URL = 'https://cdn-icons-png.flaticon.com/512/4712/4712027.png'; 
- 
+    // ==========================================
 
     let currentConvId = "";
     let chatList = JSON.parse(localStorage.getItem('med_chat_list')) || [];
@@ -216,7 +210,7 @@
         loadConfig(); 
         applyTheme(); 
         renderHistory();
-        loadProductsFromSheet();
+        // 删除了 loadProductsFromSheet()，不再加载联想列表
         
         document.querySelectorAll('.avatar').forEach(el => el.style.backgroundImage = `url('${AI_AVATAR_URL}')`);
         if (chatList.length > 0) loadChat(chatList[0].id);
@@ -224,48 +218,22 @@
         const input = document.getElementById('user_input');
         input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
         
-        // ★★★ 核心修复 1：回车发送逻辑 (最暴力直接版) ★★★
+        // ★★★ 核心修复：回车发送逻辑 (通过模拟点击按钮) ★★★
         input.onkeydown = function(e) {
-            // 如果按了回车，且没按 Shift，且不是在选中文输入法
-            if (e.keyCode === 13 && !e.shiftKey && !e.isComposing) {
+            if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
                 e.preventDefault(); // 阻止换行
-                // 直接调用发送，不走其他弯路
-                sendMessage();      
+                document.getElementById('send_btn').click(); // 触发发送按钮点击
             }
         };
         
         updateUIByMode();
     });
 
-    async function loadProductsFromSheet() {
-        const datalist = document.getElementById('product_list');
-        if(datalist.options.length > 0) return;
-        if(LOG_URL.includes("填在这里")) return; 
-
-        try {
-            const response = await fetch(LOG_URL + '?action=get_products');
-            const products = await response.json();
-            datalist.innerHTML = ""; 
-            products.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.name;
-                datalist.appendChild(opt);
-            });
-        } catch (e) { console.error("加载产品失败"); }
-    }
-
     async function sendMessage() {
         const input = document.getElementById('user_input');
         const text = input.value.trim();
         const btn = document.getElementById('send_btn');
         
-        // ★★★ 核心修复 2：地址检查 ★★★
-        // 如果用户没改代码里的 URL，直接弹窗提示，不让发请求
-        if(WORKER_URL.includes("huaged.com") === false && WORKER_URL.includes("http") === false) {
-            alert("❌ 配置错误：请联系管理员在代码中填入正确的 Cloudflare API 地址！"); 
-            return;
-        }
-
         const auth = document.getElementById('auth_code').value.trim();
         const phone = document.getElementById('phone_number').value.trim();
         const product = document.getElementById('product_name').value.trim();
@@ -304,23 +272,22 @@
                 body: JSON.stringify(payload)
             });
 
-            // ★★★ 核心修复 3：先删动画，再处理结果 (防止卡死) ★★★
+            // ★★★ 核心修复：收到回复立刻移除思考动画，并重置输入框状态 ★★★
             removeThinking(loadingId);
-            
-            if (!response.ok) {
-                throw new Error(`服务异常 (${response.status})`);
-            }
+            input.disabled = false; 
+            updatePlaceholder(); // 恢复 placeholder (粘贴客户的话...)
+            btn.style.opacity = "1";
+            if(window.innerWidth > 768) input.focus();
 
+            if (!response.ok) throw new Error(`服务异常 (${response.status})`);
+            
             const data = await response.json();
             
             if (data.answer) {
-                // 1. 正常显示
                 appendMessage('ai', data.answer, true);
                 
-                // 2. 异步记账 (解耦，不影响显示)
-                setTimeout(() => {
-                    logToSheetSafe(auth, product, text, data.answer, phone, mode);
-                }, 50);
+                // ★★★ 修复：确保复制动作能记录，并异步写日志 ★★★
+                logToSheetSafe(auth, product, text, data.answer, phone, mode);
 
                 if (currentConvId !== data.conversation_id) { 
                     currentConvId = data.conversation_id; 
@@ -335,13 +302,10 @@
             }
 
         } catch (error) {
-            // 只有真报错了才走这里
-            removeThinking(loadingId); // 双重保险，确保动画删除
-            appendMessage('ai', `❌ 网络错误：${error.message}`);
-        } finally {
-            // 无论成功失败，都解锁 UI
+            removeThinking(loadingId);
+            // 恢复 UI 状态，否则会一直卡在灰色
             input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
-            if(window.innerWidth > 768) input.focus(); 
+            appendMessage('ai', `❌ 网络错误：${error.message}`);
         }
     }
 
@@ -367,6 +331,7 @@
         div.className = `message ${role}`;
         let actions = '';
         if (showCopy) {
+            // ★★★ 修复：复制按钮点击事件，确保能发请求 ★★★
             actions = `
                 <div class="actions show">
                     <span class="act-btn" onclick="copyText(this, '${text.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')"><i class="fas fa-copy"></i> 复制话术</span>
@@ -383,6 +348,7 @@
         el.innerHTML = '<i class="fas fa-check"></i> 已复制';
         setTimeout(()=>el.innerHTML='<i class="fas fa-copy"></i> 复制话术', 2000);
         
+        // ★★★ 修复：复制日志写入 ★★★
         let devId = localStorage.getItem('dev_id');
         fetch(LOG_URL, {
             method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
