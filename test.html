@@ -254,26 +254,25 @@
         box.scrollTop = box.scrollHeight;
     }
 
-    // 发送消息
+    // 2. 发送消息 (修复版)
     async function sendMessage() {
         const input = document.getElementById('user_input');
-        const sendBtn = document.getElementById('send_btn');
         const text = input.value.trim();
+        const btn = document.getElementById('send_btn');
         
-        if (input.disabled || !text) return;
-
         const auth = document.getElementById('auth_code').value.trim();
         const phone = document.getElementById('phone_number').value.trim();
         const product = document.getElementById('product_name').value.trim();
         const mode = document.getElementById('task_mode').value;
 
+        if (!text || input.disabled) return;
         if (!auth || !phone) { alert("请先点击右上角⚙️设置！"); toggleConfig(); return; }
         if (!product) { alert("请输入产品名称！"); toggleConfig(); return; }
 
         appendMessage('user', text);
-        input.value = ''; input.style.height = '60px'; input.blur(); closeAll();
+        input.value = ''; input.style.height = '40px'; input.blur(); closeAll();
         input.disabled = true; input.placeholder = "AI 正在思考...";
-        sendBtn.style.pointerEvents = "none"; sendBtn.style.opacity = "0.5";
+        btn.style.opacity = "0.5";
         
         const loadingId = showThinking();
 
@@ -294,29 +293,32 @@
                 "user": userId
             };
 
-            const fetchWithRetry = async (url, options, n = 3) => {
-                try { return await fetch(url, options); } 
-                catch (err) { if (n <= 1) throw err; await new Promise(r => setTimeout(r, 1000)); return await fetchWithRetry(url, options, n - 1); }
-            };
-
-            const response = await fetchWithRetry(WORKER_URL, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(payload) 
+            // ★★★ 核心修复开始：统一变量名为 response ★★★
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
 
             removeThinking(loadingId);
-            const data = await res.json(); // 注意：这里通常需要 .json()，之前 v3 代码里可能漏了 error handling
-            // 如果 Cloudflare Worker 返回的是纯文本，请改用 await response.text()
+            
+            // 增加状态检查，防止 Failed to fetch 时报错不清晰
+            if (!response.ok) {
+                throw new Error(`请求失败 (状态码: ${response.status})`);
+            }
+
+            const data = await response.json(); // 这里使用 response，不再用 res
+            // ★★★ 核心修复结束 ★★★
             
             if (data.answer) {
                 appendMessage('ai', data.answer, true);
+                currentConvId = data.conversation_id;
                 
-                // 日志上报 (包含工号)
+                // 日志上报
                 let devId = localStorage.getItem('dev_id');
                 if(!devId) { devId = 'dev-'+Math.random().toString(36).substr(2,9); localStorage.setItem('dev_id', devId); }
                 
-                fetch(LOG_URL, {
+                fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain'},
                     body: JSON.stringify({
                         action: "log",
@@ -340,7 +342,7 @@
             removeThinking(loadingId);
             appendMessage('ai', `❌ 网络错误：${error.message}`);
         } finally {
-            input.disabled = false; updateUIByMode(); sendBtn.style.pointerEvents = "auto"; sendBtn.style.opacity = "1";
+            input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
         }
     }
 
