@@ -249,9 +249,7 @@
         updateUIByMode();
     });
 
-    // ... (loadProductsFromSheet 函数保留) ...
-
-    // 2. 发送消息 (防卡死版)
+// 2. 发送消息 (v8.0 修复版：彻底解耦展示与记账)
     async function sendMessage() {
         const input = document.getElementById('user_input');
         const text = input.value.trim();
@@ -263,12 +261,12 @@
         const mode = document.getElementById('task_mode').value;
 
         if (!text || input.disabled) return;
-        if (!auth || !phone) { alert("请先设置授权码！"); toggleConfig(); return; }
+        if (!auth || !phone) { alert("请先点击右上角⚙️设置！"); toggleConfig(); return; }
         if (!product) { alert("请输入产品名称！"); toggleConfig(); return; }
 
-        // UI 锁定
+        // UI 响应
         appendMessage('user', text);
-        input.value = ''; input.style.height = '40px'; input.blur(); 
+        input.value = ''; input.style.height = '40px'; input.blur(); closeAll();
         input.disabled = true; input.placeholder = "AI 正在思考...";
         btn.style.opacity = "0.5";
         
@@ -289,47 +287,46 @@
                 "user": "user-" + phone
             };
 
+            // 1. 先只请求 Dify，拿答案
             const response = await fetch(WORKER_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            // ★★★ 关键修改：收到数据后，第一时间解锁 UI，防止卡死 ★★★
+            // 2. 无论结果如何，先移除思考动画，恢复输入框
             removeThinking(loadingId);
-            input.disabled = false; 
-            updatePlaceholder(); 
-            btn.style.opacity = "1";
-            // 电脑端自动聚焦，方便连续输入
-            if(window.innerWidth > 768) input.focus(); 
+            input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
+            if(window.innerWidth > 768) input.focus();
 
             if (!response.ok) throw new Error(`服务异常 (${response.status})`);
             
             const data = await response.json();
             
             if (data.answer) {
-                // 1. 先展示回复 (让用户爽)
+                // 3. ★★★ 最重要的一步：先把答案显示出来！让用户爽！★★★
                 appendMessage('ai', data.answer, true);
                 
-                // 2. 后台默默干活 (记账、存历史)，就算这里报错也不会卡住界面
+                // 4. 更新历史记录
+                if (currentConvId !== data.conversation_id) { 
+                    currentConvId = data.conversation_id; 
+                    updateChatList(currentConvId, text); 
+                    renderHistory(); 
+                }
+                saveMsg(currentConvId, 'user', text);
+                if (data.answer) saveMsg(currentConvId, 'ai', data.answer);
+
+                // 5. ★★★ 最后再偷偷去记账，不要用 await，让它在后台跑 ★★★
+                // 延迟 100ms 执行，确保 UI 已经渲染完毕
                 setTimeout(() => {
                     logToSheetSafe(auth, product, text, data.answer, phone, mode);
-                    
-                    if (currentConvId !== data.conversation_id) { 
-                        currentConvId = data.conversation_id; 
-                        updateChatList(currentConvId, text); 
-                        renderHistory(); 
-                    }
-                    saveMsg(currentConvId, 'user', text);
-                    if (data.answer) saveMsg(currentConvId, 'ai', data.answer);
-                }, 10);
+                }, 100);
 
             } else {
                 appendMessage('ai', "❌ " + (data.message || "未知错误"));
             }
 
         } catch (error) {
-            // 只有真断网了才会走这里
             removeThinking(loadingId);
             input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
             appendMessage('ai', `❌ 网络错误：${error.message}`);
@@ -337,14 +334,14 @@
     }
 
  
-    // 修复版：确保 mode 被正确发送
+// 日志上报 (完全静默模式，失败也不报错)
     function logToSheetSafe(auth, prod, query, ans, phone, mode) {
+        if(LOG_URL.includes("填在这里")) return; 
+        
         let devId = localStorage.getItem('dev_id');
         if(!devId) { devId = 'dev-'+Math.random().toString(36).substr(2,9); localStorage.setItem('dev_id', devId); }
         
-        // 调试：你可以在浏览器F12控制台看到发送了什么
-        console.log("正在上报日志...", { mode: mode }); 
-
+        // 使用 no-cors 模式，这是跨域请求 Google 脚本成功的唯一方法
         fetch(LOG_URL, {
             method: 'POST',
             mode: 'no-cors', 
@@ -354,12 +351,17 @@
                 auth_code: auth,
                 phone: phone,
                 product: prod,
-                mode: mode, // ★★★ 关键：确保这里接收到了“模拟陪练”或“实战辅助”
+                mode: mode, 
                 query: query,
                 answer: ans,
                 device_id: devId
             })
-        }).catch(e => { console.error("日志上报失败", e); });
+        }).then(() => {
+            console.log("日志上报请求已发送");
+        }).catch(e => {
+            // 这里的错误被捕获，绝对不会影响主界面
+            console.warn("日志上报失败 (不影响使用)", e); 
+        });
     }
 
     function appendMessage(role, text, showCopy=false) {
