@@ -7,55 +7,40 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* 1. 基础变量 */
+        /* 保持原汁原味的样式，不动 */
         :root { --primary: #07C160; --bg: #f2f2f2; --white: #ffffff; --text: #111; --text-sub: #888; --border: #e0e0e0; --user-bg: #95ec69; --ai-bg: #ffffff; --sidebar-bg: #f7f7f7; --sys-msg-bg: #e1e1e1; }
         [data-theme="dark"] { --primary: #07C160; --bg: #111111; --white: #1e1e1e; --text: #e0e0e0; --text-sub: #aaa; --border: #333; --user-bg: #056a36; --ai-bg: #2c2c2c; --sidebar-bg: #1a1a1a; --sys-msg-bg: #333; }
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         html, body { width: 100%; height: 100dvh; overflow: hidden; background-color: #222; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; justify-content: center; }
 
-        /* 2. 布局框架 */
         .app-container { width: 100%; height: 100%; background: var(--bg); display: flex; flex-direction: column; position: relative; margin: 0 auto; z-index: 10; overflow: hidden; }
         @media (min-width: 768px) { .app-container { max-width: 450px; box-shadow: 0 0 30px rgba(0,0,0,0.5); } }
 
-        /* 3. 顶部导航 */
         .header { height: 50px; background: var(--white); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-shrink: 0; z-index: 20; color: var(--text); }
         .header-title { font-weight: 600; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; transition: opacity 0.3s; }
         .header-btn { font-size: 18px; cursor: pointer; padding: 8px; }
 
-        /* 4. 聊天区域 */
         .chat-area { 
             flex: 1; overflow-y: auto; padding: 15px; 
             -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 15px;
-            opacity: 1; transition: opacity 0.4s ease;
+            opacity: 1; transition: opacity 0.4s ease;  
         }
         .chat-area.fading { opacity: 0; }
 
         .message { display: flex; align-items: flex-start; gap: 10px; max-width: 100%; }
         .message.user { flex-direction: row-reverse; }
-        .avatar { width: 40px; height: 40px; border-radius: 6px; background-size: cover; flex-shrink: 0; border: none; }
+        .avatar { width: 40px; height: 40px; border-radius: 6px; background-size: cover; flex-shrink: 0; border: none;}
         .message.user .avatar { display: none; }
         .bubble-content { max-width: 85%; display: flex; flex-direction: column; min-width: 0; }
         
-        /* ★★★ 修复：增大内边距，解决文字贴边问题 ★★★ */
-        .bubble { 
-            padding: 14px 18px; /* 增大内边距 */
-            border-radius: 12px; 
-            font-size: 15px; 
-            line-height: 1.6; 
-            position: relative; 
-            color: var(--text); 
-            word-wrap: break-word; 
-            overflow-wrap: break-word; 
-        }
-        /* 修复列表贴边 */
-        .bubble ul, .bubble ol { margin: 5px 0 10px 25px; padding: 0; }
-        
+        .bubble { padding: 12px 16px; border-radius: 8px; font-size: 15px; line-height: 1.6; position: relative; color: var(--text); word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }
         .message.ai .bubble { background: var(--ai-bg); border: 1px solid var(--border); }
         .message.user .bubble { background: var(--user-bg); border: 1px solid transparent; color: #000; }
         [data-theme="dark"] .message.user .bubble { color: #fff; }
-        
+
         .message.system { justify-content: center; margin: 10px 0; }
         .message.system .bubble { background-color: var(--sys-msg-bg); color: var(--text-sub); font-size: 13px; padding: 8px 15px; border-radius: 15px; text-align: center; border: none; }
+        .highlight-tip { color: var(--primary); font-weight: bold; }
         .bubble p { margin: 0 0 10px 0; } .bubble p:last-child { margin: 0; }
 
         .actions { display: flex; gap: 15px; margin-top: 5px; padding-left: 2px; font-size: 12px; color: var(--text-sub); opacity: 0; transition: opacity 0.3s; }
@@ -64,12 +49,10 @@
         .act-btn { cursor: pointer; display: flex; align-items: center; gap: 3px; transition: color 0.2s; }
         .act-btn:hover { color: var(--primary); }
 
-        /* 5. 底部输入区 */
         .footer { background: var(--white); border-top: 1px solid var(--border); padding: 10px 15px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 10px; flex-shrink: 0; z-index: 20; }
         .input-box { flex: 1; min-height: 60px; max-height: 140px; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; outline: none; background: var(--bg); color: var(--text); resize: none; overflow-y: auto; line-height: 1.5; font-family: inherit; touch-action: pan-y; }
         .send-btn { width: 40px; height: 40px; background: var(--primary); color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-bottom: 10px; }
 
-        /* 6. 侧边栏 & 设置 */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; opacity: 0; visibility: hidden; transition: 0.3s; }
         .overlay.show { opacity: 1; visibility: visible; }
         .sidebar { position: absolute; top: 0; left: 0; height: 100%; width: 280px; max-width: 80%; background: var(--sidebar-bg); z-index: 60; transform: translateX(-100%); opacity: 0; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
@@ -77,29 +60,23 @@
         .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
         .btn-new-chat { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; font-size: 15px; cursor: pointer; background: transparent; border: 1px solid var(--primary); color: var(--primary); }
         .btn-help { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; padding: 8px; border-radius: 6px; font-size: 13px; cursor: pointer; background: transparent; border: none; color: var(--text-sub); }
-        
         .history-list { flex: 1; overflow-y: auto; padding: 10px; }
         .history-item { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
         .history-item.active { background-color: rgba(7, 193, 96, 0.1); border-left: 4px solid var(--primary); color: var(--primary); font-weight: bold; }
-        
-        .history-actions { display: flex; gap: 10px; }
-        .history-actions i { padding: 5px; color: var(--text-sub); cursor: pointer; transition: color 0.2s; }
-        .history-actions i:hover { color: var(--primary); }
-
+        .history-actions i { padding: 8px; color: var(--text-sub); cursor: pointer; margin-left: 10px; }
         .sidebar-footer { padding: 20px; border-top: 1px solid var(--border); color: var(--text-sub); font-size: 12px; }
         .footer-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .clear-cache-row { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; cursor: pointer; text-decoration: underline; }
 
-        /* 7. 配置面板 */
         .config-panel { position: absolute; top: 50px; left: 0; width: 100%; background: var(--white); z-index: 55; padding: 20px; box-shadow: 0 5px 10px rgba(0,0,0,0.05); transform: translateY(-150%); opacity: 0; transition: transform 0.3s, opacity 0.3s; }
         .config-panel.show { transform: translateY(0); opacity: 1; }
+        .lang-switch { font-size: 12px; color: var(--primary); cursor: pointer; border: 1px solid var(--primary); padding: 2px 8px; border-radius: 4px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 5px; }
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); }
         select.form-control { -webkit-appearance: none; appearance: none; background-color: var(--bg); }
         .btn-confirm { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* 弹窗 & 动画 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
         .modal-content { background: var(--white); padding: 25px; border-radius: 8px; width: 85%; max-width: 400px; color: var(--text); position: relative; }
         .close-modal { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; }
@@ -123,7 +100,9 @@
     <!-- 配置面板 -->
     <div class="config-panel" id="config-panel">
         <div class="form-group" style="border-bottom: 1px dashed var(--border); padding-bottom: 15px; margin-bottom: 15px;">
-            <label style="color: var(--primary); font-weight: bold; font-size: 14px; margin-bottom: 5px;">🛠️ 功能模式</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <label style="color: var(--primary); font-weight: bold; font-size: 14px; margin-bottom: 0;">🛠️ 功能模式</label>
+            </div>
             <select id="task_mode" class="form-control" style="font-weight: bold;" onchange="updateUIByMode()">
                 <option value="实战辅助">💰 实战辅助 (AI帮我回复)</option>
                 <option value="模拟陪练">🎭 模拟陪练 (AI扮演客户)</option>
@@ -132,19 +111,19 @@
         
         <div class="form-group">
             <label>授权码</label>
-            <input type="text" id="auth_code" class="form-control" placeholder="请输入授权码">
+            <input type="text" id="auth_code" class="form-control" placeholder="请输入您的授权码">
         </div>
         <div class="form-group">
-            <label>工号/手机号</label>
-            <input type="text" id="phone_number" class="form-control" placeholder="请输入您的工号">
+            <label>绑定账号 (QQ 或 手机号)</label>
+            <input type="text" id="phone_number" class="form-control" placeholder="请输入您的绑定号码">
         </div>
         
         <div class="form-group">
+            <!-- ★★★ 修改点 1：改为纯文本输入，无下拉，无联想 ★★★ -->
             <label>销售产品</label>
-            <input type="text" id="product_name" class="form-control" list="product_list" placeholder="输入或点击选择产品" onfocus="loadProductsFromSheet()">
-            <datalist id="product_list"></datalist>
+            <input type="text" id="product_name" class="form-control" placeholder="手动输入产品名称 (如：少女针)">
         </div>
-
+        
         <button class="btn-confirm" onclick="confirmConfig()">保存设置，开始</button>
     </div>
 
@@ -165,7 +144,7 @@
                 <i class="fas fa-moon" style="cursor:pointer; font-size:18px;" onclick="toggleTheme()"></i>
             </div>
             <div class="clear-cache-row" onclick="clearCache()">清空所有缓存</div>
-            <div style="text-align:center; margin-top:10px; font-size:12px; color:var(--text-sub)">技术支持：张兆华工作室</div>
+            <div style="text-align:center; margin-top:10px;">by：张兆华工作室 dahuazixun</div>
         </div>
     </div>
 
@@ -173,16 +152,13 @@
         <div class="message ai">
             <div class="avatar" id="ai-avatar"></div>
             <div class="bubble-content">
-                <div class="bubble">
-                    👋 欢迎！我是您的医美销冠助手。<br><br>
-                    请点击右上角 ⚙️ 输入授权码，并手动输入您要卖的产品名称。
-                </div>
+                <div class="bubble">您好！我是AI医美销冠助手。<br><br>请点击右上角 ⚙️ 完善信息，并输入您当前要销售的产品。</div>
             </div>
         </div>
     </div>
 
     <div class="footer">
-        <textarea id="user_input" class="input-box" placeholder="输入客户说的话..." rows="1" maxlength="5000"></textarea>
+        <textarea id="user_input" class="input-box" placeholder="输入内容..." rows="1" maxlength="5000"></textarea>
         <div class="send-btn" id="send_btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></div>
     </div>
 </div>
@@ -194,29 +170,28 @@
         <h3>📚 使用指南</h3>
         <br>
         <div>
-            <p><strong>1. 基础设置</strong><br>首次使用请点击右上角齿轮图标，输入老板下发的授权码，并绑定您的工号。</p>
-            <p><strong>2. 模式切换</strong><br>💰 <strong>实战辅助</strong>：复制客户说的话发给AI，AI会根据产品资料给您高情商回复话术。<br>🎭 <strong>模拟陪练</strong>：AI会扮演刁钻客户，您来回复，AI会给您的回复打分。</p>
-            <p><strong>3. 产品输入</strong><br>请在设置页手动输入产品名称（需与老板后台表格一致），点击输入框可看到联想词。</p>
+            <p><strong>1. 模式切换</strong><br>右上角设置中选择“实战辅助”或“模拟陪练”。</p>
+            <p><strong>2. 基础设置</strong><br>输入授权码和绑定手机号。</p>
+            <p><strong>3. 产品输入</strong><br>手动输入您要销售的产品名称（需与后台表格一致）。</p>
         </div>
     </div>
 </div>
 
 <script>
- 
-    const WORKER_URL = 'https://ym.huaged.com'; // Cloudflare 地址
+ const WORKER_URL = 'https://ym.huaged.com'; // Cloudflare 地址
     const LOG_URL = 'https://script.google.com/macros/s/AKfycbxG89jNmERWo_pCzfiqseqhfbhWE2cYUjyUE6XAz3BCb9-m_OkWZEyjDMuZAknqvg_F/exec'; 
     const AI_AVATAR_URL = 'https://cdn-icons-png.flaticon.com/512/4712/4712027.png'; 
- 
 
+ 
     let currentConvId = "";
-    let chatList = JSON.parse(localStorage.getItem('med_chat_list')) || [];
+    let chatList = JSON.parse(localStorage.getItem('supervisor_chat_list')) || [];
     let isDark = localStorage.getItem('theme') === 'dark';
 
     document.addEventListener('DOMContentLoaded', () => {
         loadConfig(); 
         applyTheme(); 
         renderHistory();
-        loadProductsFromSheet();
+        // Removed loadProductsFromSheet(); // 不需要自动加载了
         
         document.querySelectorAll('.avatar').forEach(el => el.style.backgroundImage = `url('${AI_AVATAR_URL}')`);
         if (chatList.length > 0) loadChat(chatList[0].id);
@@ -224,58 +199,32 @@
         const input = document.getElementById('user_input');
         input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
         
-        // ★★★ 核心修复 1：回车发送逻辑 (最暴力直接版) ★★★
-        input.onkeydown = function(e) {
-            // 如果按了回车，且没按 Shift，且不是在选中文输入法
-            if (e.keyCode === 13 && !e.shiftKey && !e.isComposing) {
-                e.preventDefault(); // 阻止换行
-                // 直接调用发送，不走其他弯路
-                sendMessage();      
-            }
-        };
+        // 保持你代码里的原有回车逻辑 (如果好用就不动，如果不好用告诉我)
+        input.addEventListener('keydown', (e) => { 
+            if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 768) { 
+                e.preventDefault(); 
+                sendMessage(); 
+            } 
+        });
         
         updateUIByMode();
     });
 
-    async function loadProductsFromSheet() {
-        const datalist = document.getElementById('product_list');
-        if(datalist.options.length > 0) return;
-        if(LOG_URL.includes("填在这里")) return; 
-
-        try {
-            const response = await fetch(LOG_URL + '?action=get_products');
-            const products = await response.json();
-            datalist.innerHTML = ""; 
-            products.forEach(p => {
-                const opt = document.createElement('option');
-                opt.value = p.name;
-                datalist.appendChild(opt);
-            });
-        } catch (e) { console.error("加载产品失败"); }
-    }
-
+    // 2. 发送消息
     async function sendMessage() {
         const input = document.getElementById('user_input');
         const text = input.value.trim();
         const btn = document.getElementById('send_btn');
         
-        // ★★★ 核心修复 2：地址检查 ★★★
-        // 如果用户没改代码里的 URL，直接弹窗提示，不让发请求
-        if(WORKER_URL.includes("huaged.com") === false && WORKER_URL.includes("http") === false) {
-            alert("❌ 配置错误：请联系管理员在代码中填入正确的 Cloudflare API 地址！"); 
-            return;
-        }
-
         const auth = document.getElementById('auth_code').value.trim();
         const phone = document.getElementById('phone_number').value.trim();
-        const product = document.getElementById('product_name').value.trim();
+        const product = document.getElementById('product_name').value.trim(); // 获取手打的产品名
         const mode = document.getElementById('task_mode').value;
 
         if (!text || input.disabled) return;
         if (!auth || !phone) { alert("请先点击右上角⚙️设置！"); toggleConfig(); return; }
         if (!product) { alert("请输入产品名称！"); toggleConfig(); return; }
 
-        // UI 响应
         appendMessage('user', text);
         input.value = ''; input.style.height = '60px'; input.blur(); closeAll();
         input.disabled = true; input.placeholder = "AI 正在思考...";
@@ -284,8 +233,8 @@
         const loadingId = showThinking();
 
         try {
-            let userId = localStorage.getItem('dify_uid');
-            if (!userId) { userId = "user-" + auth; localStorage.setItem('dify_uid', userId); }
+            let userId = localStorage.getItem('dify_user_id');
+            if (!userId) { userId = "user-" + auth; localStorage.setItem('dify_user_id', userId); }
 
             const payload = {
                 "inputs": { 
@@ -304,23 +253,28 @@
                 body: JSON.stringify(payload)
             });
 
-            // ★★★ 核心修复 3：先删动画，再处理结果 (防止卡死) ★★★
+            // ★★★ 修改点 2：收到回复后，无论成功失败，第一时间移除思考状态 ★★★
             removeThinking(loadingId);
-            
-            if (!response.ok) {
-                throw new Error(`服务异常 (${response.status})`);
-            }
+            input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
+            if(window.innerWidth > 768) input.focus();
 
+            if (!response.ok) throw new Error(`服务异常 (${response.status})`);
             const data = await response.json();
             
             if (data.answer) {
-                // 1. 正常显示
                 appendMessage('ai', data.answer, true);
                 
-                // 2. 异步记账 (解耦，不影响显示)
-                setTimeout(() => {
-                    logToSheetSafe(auth, product, text, data.answer, phone, mode);
-                }, 50);
+                // 记账逻辑
+                let devId = localStorage.getItem('site_device_id');
+                if(!devId) { devId = 'dev-'+Math.random().toString(36).substr(2,9); localStorage.setItem('site_device_id', devId); }
+                
+                fetch(LOG_URL, {
+                    method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'text/plain;charset=utf-8'},
+                    body: JSON.stringify({
+                        action: "log", auth_code: auth, phone: phone, product: product,
+                        mode: mode, query: text, answer: data.answer, device_id: devId
+                    })
+                }).catch(e => {});
 
                 if (currentConvId !== data.conversation_id) { 
                     currentConvId = data.conversation_id; 
@@ -335,43 +289,26 @@
             }
 
         } catch (error) {
-            // 只有真报错了才走这里
-            removeThinking(loadingId); // 双重保险，确保动画删除
-            appendMessage('ai', `❌ 网络错误：${error.message}`);
-        } finally {
-            // 无论成功失败，都解锁 UI
+            // 这里也加一层保险，防止断网时一直转圈
+            removeThinking(loadingId);
             input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
-            if(window.innerWidth > 768) input.focus(); 
+            appendMessage('ai', `❌ 网络错误：${error.message}`);
         }
-    }
-
-    function logToSheetSafe(auth, prod, query, ans, phone, mode) {
-        if(LOG_URL.includes("填在这里")) return; 
-        
-        let devId = localStorage.getItem('dev_id');
-        if(!devId) { devId = 'dev-'+Math.random().toString(36).substr(2,9); localStorage.setItem('dev_id', devId); }
-        
-        fetch(LOG_URL, {
-            method: 'POST', mode: 'no-cors', 
-            headers: {'Content-Type': 'text/plain;charset=utf-8'},
-            body: JSON.stringify({
-                action: "log", auth_code: auth, phone: phone, product: prod,
-                mode: mode, query: query, answer: ans, device_id: devId
-            })
-        }).catch(e => {});
     }
 
     function appendMessage(role, text, showCopy=false) {
         const box = document.getElementById('chat-box');
         const div = document.createElement('div');
         div.className = `message ${role}`;
+        
         let actions = '';
         if (showCopy) {
             actions = `
                 <div class="actions show">
-                    <span class="act-btn" onclick="copyText(this, '${text.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')"><i class="fas fa-copy"></i> 复制话术</span>
+                    <span class="act-btn" onclick="copyText(this, '${text.replace(/'/g, "\\'").replace(/\n/g, "\\n")}')"><i class="fas fa-copy"></i> 复制内容</span>
                 </div>`;
         }
+
         const avatar = role === 'ai' ? `<div class="avatar" style="background-image: url('${AI_AVATAR_URL}')"></div>` : '';
         div.innerHTML = `${avatar}<div class="bubble-content"><div class="bubble">${marked.parse(text)}</div>${actions}</div>`;
         box.appendChild(div); box.scrollTop = box.scrollHeight;
@@ -381,9 +318,10 @@
         navigator.clipboard.writeText(txt);
         const original = el.innerHTML;
         el.innerHTML = '<i class="fas fa-check"></i> 已复制';
-        setTimeout(()=>el.innerHTML='<i class="fas fa-copy"></i> 复制话术', 2000);
+        setTimeout(()=>el.innerHTML=original, 2000);
         
-        let devId = localStorage.getItem('dev_id');
+        // 上报复制行为
+        let devId = localStorage.getItem('site_device_id');
         fetch(LOG_URL, {
             method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
             body:JSON.stringify({action:"copy_action", device_id:devId})
@@ -423,10 +361,10 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     function confirmConfig() {
-        localStorage.setItem('med_auth', document.getElementById('auth_code').value);
-        localStorage.setItem('med_phone', document.getElementById('phone_number').value);
-        localStorage.setItem('med_product', document.getElementById('product_name').value);
-        localStorage.setItem('med_mode', document.getElementById('task_mode').value);
+        localStorage.setItem('sup_auth', document.getElementById('auth_code').value);
+        localStorage.setItem('sup_phone', document.getElementById('phone_number').value);
+        localStorage.setItem('sup_school', document.getElementById('product_name').value); // 复用 storage key
+        localStorage.setItem('sup_mode', document.getElementById('task_mode').value);
         closeAll();
         
         const prod = document.getElementById('product_name').value;
@@ -445,10 +383,10 @@
     }
 
     function loadLocalConfig() {
-        if(localStorage.getItem('med_auth')) document.getElementById('auth_code').value = localStorage.getItem('med_auth');
-        if(localStorage.getItem('med_phone')) document.getElementById('phone_number').value = localStorage.getItem('med_phone');
-        if(localStorage.getItem('med_mode')) document.getElementById('task_mode').value = localStorage.getItem('med_mode');
-        if(localStorage.getItem('med_product')) document.getElementById('product_name').value = localStorage.getItem('med_product');
+        if(localStorage.getItem('sup_auth')) document.getElementById('auth_code').value = localStorage.getItem('sup_auth');
+        if(localStorage.getItem('sup_phone')) document.getElementById('phone_number').value = localStorage.getItem('sup_phone');
+        if(localStorage.getItem('sup_mode')) document.getElementById('task_mode').value = localStorage.getItem('sup_mode');
+        if(localStorage.getItem('sup_school')) document.getElementById('product_name').value = localStorage.getItem('sup_school');
         updateUIByMode();
     }
 
@@ -458,74 +396,49 @@
     
     function startNewChat() { 
         currentConvId = ""; 
-        const chatBox = document.getElementById('chat-box');
-        chatBox.classList.add('fading');
-        setTimeout(() => {
-            chatBox.innerHTML = `<div class="message ai"><div class="avatar" style="background-image: url('${AI_AVATAR_URL}')"></div><div class="bubble-content"><div class="bubble">👋 新会话开始。</div></div></div>`; 
-            chatBox.classList.remove('fading');
-            closeAll();
-            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('active'));
-        }, 400); 
+        document.getElementById('chat-box').innerHTML = `<div class="message ai"><div class="avatar" style="background-image: url('${AI_AVATAR_URL}')"></div><div class="bubble-content"><div class="bubble">👋 新会话开始。</div></div></div>`; 
+        closeAll(); renderHistory(); 
     }
-
     function updateChatList(id, firstMsg) { 
         if (!chatList.find(c => c.id === id)) { 
             chatList.unshift({ id: id, title: firstMsg.substring(0, 10)+"..." }); 
-            localStorage.setItem('med_chat_list', JSON.stringify(chatList)); 
+            localStorage.setItem('supervisor_chat_list', JSON.stringify(chatList)); 
             renderHistory(); 
         } 
     }
-
     function renderHistory() {
         document.getElementById('history-list').innerHTML = chatList.map(c => `
             <div class="history-item ${c.id === currentConvId ? 'active' : ''}" onclick="loadChat('${c.id}')">
                 <span>${c.title}</span>
-                <div class="history-actions">
-                    <i class="fas fa-pen" onclick="renameChat('${c.id}', event)"></i>
-                    <i class="fas fa-trash" onclick="deleteChat('${c.id}', event)"></i>
-                </div>
+                <div class="history-actions"><i class="fas fa-pen" onclick="renameChat('${c.id}', event)"></i><i class="fas fa-trash" onclick="deleteChat('${c.id}', event)"></i></div>
             </div>`).join(''); 
     }
-
     function renameChat(id, e) {
         e.stopPropagation();
         const chat = chatList.find(c => c.id === id);
-        const newName = prompt("请输入客户备注名：", chat.title);
-        if (newName) {
-            chat.title = newName;
-            localStorage.setItem('med_chat_list', JSON.stringify(chatList));
-            renderHistory();
-        }
+        const newName = prompt("备注名：", chat.title);
+        if (newName) { chat.title = newName; localStorage.setItem('supervisor_chat_list', JSON.stringify(chatList)); renderHistory(); }
     }
-
     function deleteChat(id, e) {
         e.stopPropagation();
-        if(!confirm("删除此记录？")) return;
+        if(!confirm("删除？")) return;
         chatList = chatList.filter(c => c.id !== id);
-        localStorage.setItem('med_chat_list', JSON.stringify(chatList));
-        localStorage.removeItem(`med_msg_${id}`);
+        localStorage.setItem('supervisor_chat_list', JSON.stringify(chatList));
+        localStorage.removeItem(`sup_msg_${id}`);
         renderHistory();
-        if(currentConvId === id) startNewChat();
+        if(currentConvId === id) startNewChat(); 
     }
-
     function loadChat(id) {
-        const chatBox = document.getElementById('chat-box');
-        chatBox.classList.add('fading');
-        closeAll();
-        setTimeout(() => {
-            currentConvId = id; 
-            const msgs = JSON.parse(localStorage.getItem(`med_msg_${id}`)) || []; 
-            chatBox.innerHTML = ''; 
-            msgs.forEach(m => appendMessage(m.role, m.content));
-            chatBox.classList.remove('fading');
-            renderHistory(); 
-        }, 400);
+        currentConvId = id; closeAll();
+        const msgs = JSON.parse(localStorage.getItem(`sup_msg_${id}`)) || []; 
+        document.getElementById('chat-box').innerHTML = ''; 
+        msgs.forEach(m => appendMessage(m.role, m.content));
+        renderHistory();
     }
-
     function saveMsg(id, role, content) {
-        let msgs = JSON.parse(localStorage.getItem(`med_msg_${id}`)) || [];
+        let msgs = JSON.parse(localStorage.getItem(`sup_msg_${id}`)) || [];
         msgs.push({ role, content });
-        localStorage.setItem(`med_msg_${id}`, JSON.stringify(msgs));
+        localStorage.setItem(`sup_msg_${id}`, JSON.stringify(msgs));
     }
 </script>
 </body>
