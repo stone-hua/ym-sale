@@ -36,29 +36,14 @@
         .message.user .avatar { display: none; }
         .bubble-content { max-width: 85%; display: flex; flex-direction: column; min-width: 0; }
         
-        .bubble { padding: 12px 18px; border-radius: 10px; font-size: 15px; line-height: 1.6; position: relative; color: var(--text); word-wrap: break-word; overflow-wrap: break-word; }
-        .bubble ul, .bubble ol { margin: 5px 0 10px 25px; padding: 0; }
-        .bubble li { margin-bottom: 5px; }
-
+        .bubble { padding: 12px 16px; border-radius: 8px; font-size: 15px; line-height: 1.6; position: relative; color: var(--text); word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }
         .message.ai .bubble { background: var(--ai-bg); border: 1px solid var(--border); }
         .message.user .bubble { background: var(--user-bg); border: 1px solid transparent; color: #000; }
         [data-theme="dark"] .message.user .bubble { color: #fff; }
         
-        /* 居中系统提示 (修改点5) */
-        .message.system { justify-content: center; margin: 15px 0; }
-        .message.system .bubble { 
-            background-color: rgba(0,0,0,0.05); 
-            color: var(--text-sub); 
-            font-size: 12px; 
-            padding: 5px 12px; 
-            border-radius: 20px; 
-            text-align: center; 
-            border: none; 
-            display: inline-block;
-            max-width: 90%;
-        }
-        [data-theme="dark"] .message.system .bubble { background-color: rgba(255,255,255,0.1); }
-        .bubble p { margin: 0; } 
+        .message.system { justify-content: center; margin: 10px 0; }
+        .message.system .bubble { background-color: var(--sys-msg-bg); color: var(--text-sub); font-size: 13px; padding: 8px 15px; border-radius: 15px; text-align: center; border: none; }
+        .bubble p { margin: 0 0 10px 0; } .bubble p:last-child { margin: 0; }
 
         .actions { display: flex; gap: 15px; margin-top: 5px; padding-left: 2px; font-size: 12px; color: var(--text-sub); opacity: 0; transition: opacity 0.3s; }
         .actions.show { opacity: 1; }
@@ -66,46 +51,16 @@
         .act-btn { cursor: pointer; display: flex; align-items: center; gap: 3px; transition: color 0.2s; }
         .act-btn:hover { color: var(--primary); }
 
-        /* 5. 底部输入区 (修改点4：增高) */
+        /* 5. 底部输入区 */
         .footer { background: var(--white); border-top: 1px solid var(--border); padding: 10px 15px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); display: flex; align-items: flex-end; gap: 10px; flex-shrink: 0; z-index: 20; }
-        .input-box { 
-            flex: 1; 
-            min-height: 80px; /* 增高便于点击 */
-            max-height: 160px; 
-            padding: 12px; 
-            border: 1px solid var(--border); 
-            border-radius: 8px; 
-            font-size: 16px; 
-            outline: none; 
-            background: var(--bg); 
-            color: var(--text); 
-            resize: none; 
-            overflow-y: auto; 
-            line-height: 1.5; 
-            font-family: inherit; 
-            touch-action: pan-y; 
-        }
+        .input-box { flex: 1; min-height: 60px; max-height: 140px; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 16px; outline: none; background: var(--bg); color: var(--text); resize: none; overflow-y: auto; line-height: 1.5; font-family: inherit; touch-action: pan-y; }
         .send-btn { width: 40px; height: 40px; background: var(--primary); color: white; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; margin-bottom: 10px; }
 
-        /* 6. 侧边栏 & 设置 (修改点1：增加 visibility 解决无法真正收起) */
+        /* 6. 侧边栏 & 设置 */
         .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 50; opacity: 0; visibility: hidden; transition: 0.3s; }
         .overlay.show { opacity: 1; visibility: visible; }
-        
-        .sidebar { 
-            position: absolute; top: 0; left: 0; height: 100%; width: 280px; max-width: 80%; 
-            background: var(--sidebar-bg); z-index: 60; 
-            transform: translateX(-100%); 
-            opacity: 0;
-            visibility: hidden; /* 关键修复：彻底隐藏 */
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s, visibility 0.3s; 
-            display: flex; flex-direction: column; border-right: 1px solid var(--border); 
-        }
-        .sidebar.show { 
-            transform: translateX(0); 
-            opacity: 1; 
-            visibility: visible; 
-        }
-        
+        .sidebar { position: absolute; top: 0; left: 0; height: 100%; width: 280px; max-width: 80%; background: var(--sidebar-bg); z-index: 60; transform: translateX(-100%); opacity: 0; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s; display: flex; flex-direction: column; border-right: 1px solid var(--border); }
+        .sidebar.show { transform: translateX(0); opacity: 1; }
         .sidebar-header { padding: 20px; border-bottom: 1px solid var(--border); }
         .btn-new-chat { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 6px; font-size: 15px; cursor: pointer; background: transparent; border: 1px solid var(--primary); color: var(--primary); }
         .btn-help { display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; padding: 8px; border-radius: 6px; font-size: 13px; cursor: pointer; background: transparent; border: none; color: var(--text-sub); }
@@ -113,16 +68,17 @@
         .history-list { flex: 1; overflow-y: auto; padding: 10px; }
         .history-item { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s; }
         .history-item.active { background-color: rgba(7, 193, 96, 0.1); border-left: 4px solid var(--primary); color: var(--primary); font-weight: bold; }
-        .history-actions i { padding: 8px; color: var(--text-sub); cursor: pointer; margin-left: 10px; }
-        
+        .history-actions { display: flex; gap: 10px; }
+        .history-actions i { padding: 5px; color: var(--text-sub); cursor: pointer; transition: color 0.2s; }
+        .history-actions i:hover { color: var(--primary); }
+
         .sidebar-footer { padding: 20px; border-top: 1px solid var(--border); color: var(--text-sub); font-size: 12px; }
         .footer-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        /* 修改点3：清空缓存移到中间 (历史列表下方) */
-        .mid-action-row { text-align: center; padding: 15px; border-top: 1px solid var(--border); cursor: pointer; color: var(--text-sub); font-size: 13px; text-decoration: underline; }
+        .clear-cache-row { display: flex; justify-content: center; align-items: center; margin-bottom: 10px; cursor: pointer; text-decoration: underline; }
 
         /* 7. 配置面板 */
-        .config-panel { position: absolute; top: 50px; left: 0; width: 100%; background: var(--white); z-index: 55; padding: 20px; box-shadow: 0 5px 10px rgba(0,0,0,0.05); transform: translateY(-150%); opacity: 0; visibility: hidden; transition: transform 0.3s, opacity 0.3s, visibility 0.3s; }
-        .config-panel.show { transform: translateY(0); opacity: 1; visibility: visible; }
+        .config-panel { position: absolute; top: 50px; left: 0; width: 100%; background: var(--white); z-index: 55; padding: 20px; box-shadow: 0 5px 10px rgba(0,0,0,0.05); transform: translateY(-150%); opacity: 0; transition: transform 0.3s, opacity 0.3s; }
+        .config-panel.show { transform: translateY(0); opacity: 1; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 5px; }
         .form-control { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); }
@@ -153,9 +109,7 @@
     <!-- 配置面板 -->
     <div class="config-panel" id="config-panel">
         <div class="form-group" style="border-bottom: 1px dashed var(--border); padding-bottom: 15px; margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                <label style="color: var(--primary); font-weight: bold; font-size: 14px; margin-bottom: 0;">🛠️ 功能模式</label>
-            </div>
+            <label style="color: var(--primary); font-weight: bold; font-size: 14px; margin-bottom: 5px;">🛠️ 功能模式</label>
             <select id="task_mode" class="form-control" style="font-weight: bold;" onchange="updateUIByMode()">
                 <option value="实战辅助">💰 实战辅助 (AI帮我回复)</option>
                 <option value="模拟陪练">🎭 模拟陪练 (AI扮演客户)</option>
@@ -189,19 +143,13 @@
                 <i class="far fa-question-circle"></i> 使用说明
             </button>
         </div>
-        
         <div class="history-list" id="history-list"></div>
-        
-        <!-- 修改点3：清空缓存移到这里 (历史列表下方) -->
-        <div class="mid-action-row" onclick="clearCache()">
-            <i class="fas fa-trash-alt"></i> 清空所有缓存
-        </div>
-
         <div class="sidebar-footer">
             <div class="footer-row">
                 <span>夜间模式</span>
                 <i class="fas fa-moon" style="cursor:pointer; font-size:18px;" onclick="toggleTheme()"></i>
             </div>
+            <div class="clear-cache-row" onclick="clearCache()">清空所有缓存</div>
             <div style="text-align:center; margin-top:10px;">by：张兆华工作室 dahuazixun</div>
         </div>
     </div>
@@ -216,7 +164,6 @@
     </div>
 
     <div class="footer">
-        <!-- 修改点4：输入框已增高 -->
         <textarea id="user_input" class="input-box" placeholder="输入内容..." rows="1" maxlength="5000"></textarea>
         <div class="send-btn" id="send_btn" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></div>
     </div>
@@ -237,16 +184,21 @@
 </div>
 
 <script>
-    const WORKER_URL = 'https://ym.huaged.com'; 
-    const LOG_URL = 'https://script.google.com/macros/s/AKfycbxG89jNmERWo_pCzfiqseqhfbhWE2cYUjyUE6XAz3BCb9-m_OkWZEyjDMuZAknqvg_F/exec'; 
+    // ==========================================
+    // ⚠️ 核心配置区
+    // ==========================================
+    const WORKER_URL = 'https://api.huaged.com'; 
+    const LOG_URL = '你的_GOOGLE_SCRIPT_URL_填在这里'; 
     const AI_AVATAR_URL = 'https://cdn-icons-png.flaticon.com/512/4712/4712027.png'; 
-
+    // ==========================================
+ 
     let currentConvId = "";
-    let chatList = JSON.parse(localStorage.getItem('supervisor_chat_list')) || [];
+    let chatList = JSON.parse(localStorage.getItem('med_chat_list')) || [];
     let isDark = localStorage.getItem('theme') === 'dark';
 
-document.addEventListener('DOMContentLoaded', () => {
-        loadConfig(); 
+    // 1. 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        loadConfig(); // ★★★ 修复2：页面加载时读取缓存填入输入框
         applyTheme(); 
         renderHistory();
         
@@ -254,29 +206,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (chatList.length > 0) loadChat(chatList[0].id);
         
         const input = document.getElementById('user_input');
+        input.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px'; });
         
-        // 自动高度
-        input.addEventListener('input', function() { 
-            this.style.height = 'auto'; 
-            this.style.height = (this.scrollHeight) + 'px'; 
-        });
-        
-        // ★★★ 强力回车修复 (v9.0) ★★★
-        input.onkeydown = function(e) {
-            // 调试用：按F12看控制台有没有这行字
-            // console.log("Key pressed:", e.key); 
-            
-            if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
-                e.preventDefault(); // 阻止换行
-                e.stopPropagation(); // 阻止冒泡
-                
-                // 直接调用 sendMessage，不通过按钮点击
-                // 这样更直接，少绕一个弯
-                if(this.value.trim() !== "") {
-                    sendMessage();
-                }
+        // ★★★ 修复1：电脑端回车发送 (Shift+Enter换行)
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 768) {
+                e.preventDefault();
+                sendMessage();
             }
-        };
+        });
         
         updateUIByMode();
     });
@@ -292,8 +230,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const mode = document.getElementById('task_mode').value;
 
         if (!text || input.disabled) return;
-        if (!auth || !phone) { alert("请先点击右上角⚙️设置授权！"); toggleConfig(); return; }
-        if (!product) { alert("请输入当前销售的产品名称！"); toggleConfig(); return; }
+        if (!auth || !phone) { alert("请先点击右上角⚙️设置！"); toggleConfig(); return; }
+        if (!product) { alert("请输入产品名称！"); toggleConfig(); return; }
 
         appendMessage('user', text);
         input.value = ''; input.style.height = '60px'; input.blur(); closeAll();
@@ -302,8 +240,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const loadingId = showThinking();
 
         try {
-            let userId = localStorage.getItem('dify_user_id');
-            if (!userId) { userId = "user-" + auth; localStorage.setItem('dify_user_id', userId); }
+            let userId = localStorage.getItem('dify_uid');
+            if (!userId) { userId = "user-" + auth; localStorage.setItem('dify_uid', userId); }
 
             const payload = {
                 "inputs": { 
@@ -324,7 +262,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             removeThinking(loadingId);
             
-            // 无论成功失败，恢复UI
             input.disabled = false; updatePlaceholder(); btn.style.opacity = "1";
             if(window.innerWidth > 768) input.focus();
 
@@ -385,31 +322,16 @@ document.addEventListener('DOMContentLoaded', () => {
         box.appendChild(div); box.scrollTop = box.scrollHeight;
     }
 
-    // 修改点2：修复复制功能
     function copyText(el, txt) {
-        // 创建临时文本域
-        const t = document.createElement("textarea");
-        t.value = txt;
-        document.body.appendChild(t);
-        t.select();
-        
-        try {
-            document.execCommand('copy'); // 使用兼容性最好的方法
-            const original = el.innerHTML;
-            el.innerHTML = '<i class="fas fa-check"></i> 已复制';
-            setTimeout(()=>el.innerHTML=original, 2000);
-            
-            // 上报复制行为
-            let devId = localStorage.getItem('dev_id');
-            fetch(LOG_URL, {
-                method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
-                body:JSON.stringify({action:"copy_action", device_id:devId})
-            }).catch(e=>{});
-        } catch (err) {
-            alert('复制失败，请长按手动复制');
-        } finally {
-            document.body.removeChild(t);
-        }
+        navigator.clipboard.writeText(txt);
+        const original = el.innerHTML;
+        el.innerHTML = '<i class="fas fa-check"></i> 已复制';
+        setTimeout(()=>el.innerHTML=original, 2000);
+        let devId = localStorage.getItem('dev_id');
+        fetch(LOG_URL, {
+            method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'},
+            body:JSON.stringify({action:"copy_action", device_id:devId})
+        }).catch(e=>{});
     }
 
     function showThinking() {
@@ -444,21 +366,33 @@ document.addEventListener('DOMContentLoaded', () => {
     function showModal(id) { closeAll(); document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+    // ★★★ 修复3：自定义绿色提醒文案 ★★★
     function confirmConfig() {
-        localStorage.setItem('sup_auth', document.getElementById('auth_code').value);
-        localStorage.setItem('sup_phone', document.getElementById('phone_number').value);
-        localStorage.setItem('sup_school', document.getElementById('product_name').value); 
-        localStorage.setItem('sup_mode', document.getElementById('task_mode').value);
+        localStorage.setItem('med_auth', document.getElementById('auth_code').value);
+        localStorage.setItem('med_phone', document.getElementById('phone_number').value);
+        localStorage.setItem('med_product', document.getElementById('product_name').value);
+        localStorage.setItem('med_mode', document.getElementById('task_mode').value);
         closeAll();
         
-        // 修改点5：居中系统提醒 (仿AI督导风格)
         const prod = document.getElementById('product_name').value;
         const modeName = document.getElementById('task_mode').value;
+        
+        // 动态提示语
+        let guideText = "";
+        if (modeName === '实战辅助') {
+            guideText = `💰 **已切换至【实战辅助】模式**<br>当前产品：${prod}<br>请直接粘贴客户说的话，AI为您生成高情商回复。`;
+        } else {
+            guideText = `🎭 **已切换至【模拟陪练】模式**<br>当前产品：${prod}<br>AI将扮演刁钻客户，请您输入第一句开场白。`;
+        }
+        
+        const tipText = `<br><br><span style="color:#07C160; font-weight:bold; font-size:12px;">💡 小技巧：使用手机键盘 [语音转文字] 输入，不怕错别字，效率高5倍！</span>`;
+
         const box = document.getElementById('chat-box');
         const div = document.createElement('div');
         div.className = 'message system';
-        div.innerHTML = `<div class="bubble">💡 已切换至【${modeName}】模式<br>当前产品：${prod}</div>`;
-        box.appendChild(div); box.scrollTop = box.scrollHeight;
+        div.innerHTML = `<div class="bubble-content"><div class="bubble">${marked.parse(guideText + tipText)}</div></div>`;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
     }
 
     function updateUIByMode() {
@@ -468,13 +402,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('header-title').innerText = mode;
     }
     
-    function updatePlaceholder() { updateUIByMode(); } // 兼容旧调用
+    function updatePlaceholder() { updateUIByMode(); } 
 
+    // ★★★ 修复2：加载缓存填入输入框 ★★★
     function loadLocalConfig() {
-        if(localStorage.getItem('sup_auth')) document.getElementById('auth_code').value = localStorage.getItem('sup_auth');
-        if(localStorage.getItem('sup_phone')) document.getElementById('phone_number').value = localStorage.getItem('sup_phone');
-        if(localStorage.getItem('sup_mode')) document.getElementById('task_mode').value = localStorage.getItem('sup_mode');
-        if(localStorage.getItem('sup_school')) document.getElementById('product_name').value = localStorage.getItem('sup_school');
+        if(localStorage.getItem('med_auth')) document.getElementById('auth_code').value = localStorage.getItem('med_auth');
+        if(localStorage.getItem('med_phone')) document.getElementById('phone_number').value = localStorage.getItem('med_phone');
+        if(localStorage.getItem('med_mode')) document.getElementById('task_mode').value = localStorage.getItem('med_mode');
+        if(localStorage.getItem('med_product')) document.getElementById('product_name').value = localStorage.getItem('med_product');
         updateUIByMode();
     }
 
@@ -497,7 +432,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateChatList(id, firstMsg) { 
         if (!chatList.find(c => c.id === id)) { 
             chatList.unshift({ id: id, title: firstMsg.substring(0, 10)+"..." }); 
-            localStorage.setItem('supervisor_chat_list', JSON.stringify(chatList)); 
+            localStorage.setItem('med_chat_list', JSON.stringify(chatList)); 
             renderHistory(); 
         } 
     }
@@ -512,34 +447,28 @@ document.addEventListener('DOMContentLoaded', () => {
         e.stopPropagation();
         const chat = chatList.find(c => c.id === id);
         const newName = prompt("备注名：", chat.title);
-        if (newName) { chat.title = newName; localStorage.setItem('supervisor_chat_list', JSON.stringify(chatList)); renderHistory(); }
+        if (newName) { chat.title = newName; localStorage.setItem('med_chat_list', JSON.stringify(chatList)); renderHistory(); }
     }
     function deleteChat(id, e) {
         e.stopPropagation();
         if(!confirm("删除？")) return;
         chatList = chatList.filter(c => c.id !== id);
-        localStorage.setItem('supervisor_chat_list', JSON.stringify(chatList));
-        localStorage.removeItem(`sup_msg_${id}`);
+        localStorage.setItem('med_chat_list', JSON.stringify(chatList));
+        localStorage.removeItem(`med_msg_${id}`);
         renderHistory();
         if(currentConvId === id) startNewChat(); 
     }
     function loadChat(id) {
-        const box = document.getElementById('chat-box');
-        box.classList.add('fading');
-        closeAll();
-        setTimeout(() => {
-            currentConvId = id; 
-            const msgs = JSON.parse(localStorage.getItem(`sup_msg_${id}`)) || []; 
-            box.innerHTML = ''; 
-            msgs.forEach(m => appendMessage(m.role, m.content));
-            box.classList.remove('fading');
-            renderHistory(); 
-        }, 400);
+        currentConvId = id; closeAll();
+        const msgs = JSON.parse(localStorage.getItem(`med_msg_${id}`)) || []; 
+        document.getElementById('chat-box').innerHTML = ''; 
+        msgs.forEach(m => appendMessage(m.role, m.content));
+        renderHistory();
     }
     function saveMsg(id, role, content) {
-        let msgs = JSON.parse(localStorage.getItem(`sup_msg_${id}`)) || [];
+        let msgs = JSON.parse(localStorage.getItem(`med_msg_${id}`)) || [];
         msgs.push({ role, content });
-        localStorage.setItem(`sup_msg_${id}`, JSON.stringify(msgs));
+        localStorage.setItem(`med_msg_${id}`, JSON.stringify(msgs));
     }
 </script>
 </body>
