@@ -36,8 +36,27 @@
         .message.user .avatar { display: none; }
         .bubble-content { max-width: 85%; display: flex; flex-direction: column; min-width: 0; }
         
-        /* 修改了 padding (内边距) 和 line-height (行高) */
-        .bubble { padding: 15px 20px; border-radius: 12px; font-size: 15px; line-height: 1.6; position: relative; color: var(--text); word-wrap: break-word; overflow-wrap: break-word; word-break: break-word; }
+        /* 修复版样式：增加列表缩进，优化阅读体验 */
+        .bubble { 
+            padding: 12px 18px; 
+            border-radius: 10px; 
+            font-size: 15px; 
+            line-height: 1.6; 
+            position: relative; 
+            color: var(--text); 
+            word-wrap: break-word; 
+            overflow-wrap: break-word; 
+        }
+        
+        /* 专门给列表(ul, ol)增加缩进，防止圆点贴边 */
+        .bubble ul, .bubble ol { 
+            margin: 5px 0 10px 25px; /* 左侧留出25px给圆点 */
+            padding: 0; 
+        }
+        
+        .bubble li {
+            margin-bottom: 5px; /* 让列表项之间有点间隙 */
+        }
         .message.ai .bubble { background: var(--ai-bg); border: 1px solid var(--border); }
         .message.user .bubble { background: var(--user-bg); border: 1px solid transparent; color: #000; }
         [data-theme="dark"] .message.user .bubble { color: #fff; }
@@ -318,10 +337,14 @@
     }
 
  
-    function logToSheetSafe(auth, prod, query, ans, phone, mode) { // <--- 参数加了 mode
+    // 修复版：确保 mode 被正确发送
+    function logToSheetSafe(auth, prod, query, ans, phone, mode) {
         let devId = localStorage.getItem('dev_id');
         if(!devId) { devId = 'dev-'+Math.random().toString(36).substr(2,9); localStorage.setItem('dev_id', devId); }
         
+        // 调试：你可以在浏览器F12控制台看到发送了什么
+        console.log("正在上报日志...", { mode: mode }); 
+
         fetch(LOG_URL, {
             method: 'POST',
             mode: 'no-cors', 
@@ -331,12 +354,12 @@
                 auth_code: auth,
                 phone: phone,
                 product: prod,
-                mode: mode, // <--- 传给后台
+                mode: mode, // ★★★ 关键：确保这里接收到了“模拟陪练”或“实战辅助”
                 query: query,
                 answer: ans,
                 device_id: devId
             })
-        }).catch(e => {});
+        }).catch(e => { console.error("日志上报失败", e); });
     }
 
     function appendMessage(role, text, showCopy=false) {
