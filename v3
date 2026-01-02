@@ -178,13 +178,10 @@
 </div>
 
 <script>
-    // ==========================================
-    // ⚠️ 核心配置区：已修正 URL
-    // ==========================================
-    const WORKER_URL = 'https://api.huaged.com'; // Cloudflare Worker 地址
+ const WORKER_URL = 'https://ym.huaged.com'; // Cloudflare 地址
     const LOG_URL = 'https://script.google.com/macros/s/AKfycbxG89jNmERWo_pCzfiqseqhfbhWE2cYUjyUE6XAz3BCb9-m_OkWZEyjDMuZAknqvg_F/exec'; 
     const AI_AVATAR_URL = 'https://cdn-icons-png.flaticon.com/512/4712/4712027.png'; 
-    // ==========================================
+
  
     let currentConvId = "";
     let chatList = JSON.parse(localStorage.getItem('supervisor_chat_list')) || [];
